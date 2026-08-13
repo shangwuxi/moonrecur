@@ -17,22 +17,32 @@ pub(all) struct Date {
   year : Int
   month : Int
   day : Int
-} derive(Eq, @debug.Debug)
+} derive(Eq, Hash, @debug.Debug)
 pub fn Date::add_days(Self, Int) -> Result[Self, Diagnostic]
 pub fn Date::add_months(Self, Int) -> Result[Self, Diagnostic]
 pub fn Date::compare(Self, Self) -> Int
-pub fn Date::from_ordinal(Int) -> Result[Self, Diagnostic]
-pub fn Date::new(Int, Int, Int) -> Result[Self, Diagnostic]
-pub fn Date::ordinal(Self) -> Int
+pub fn Date::epoch_day(Self) -> Int64
+pub fn Date::is_after(Self, Self) -> Bool
+pub fn Date::is_before(Self, Self) -> Bool
+pub fn Date::make(Int, Int, Int) -> Result[Self, Diagnostic]
 pub fn Date::parse(String) -> Result[Self, Diagnostic]
 pub fn Date::to_iso(Self) -> String
 pub fn Date::weekday(Self) -> Weekday
 
-pub(all) struct Diagnostic {
+pub struct Diagnostic {
   code : String
   field : String
   message : String
+  expected : String
+  actual : String
 } derive(Eq, @debug.Debug)
+pub fn Diagnostic::actual(Self) -> String
+pub fn Diagnostic::code(Self) -> String
+pub fn Diagnostic::expected(Self) -> String
+pub fn Diagnostic::field(Self) -> String
+pub fn Diagnostic::message(Self) -> String
+pub fn Diagnostic::new(String, String, String, String, String) -> Self
+pub fn Diagnostic::to_text(Self) -> String
 
 pub(all) enum Weekday {
   Monday
@@ -42,7 +52,8 @@ pub(all) enum Weekday {
   Friday
   Saturday
   Sunday
-} derive(Compare, Eq, @debug.Debug)
+} derive(Eq, Hash, @debug.Debug)
+pub fn Weekday::parse(String) -> Result[Self, Diagnostic]
 pub fn Weekday::short_name(Self) -> String
 
 // Type aliases

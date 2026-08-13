@@ -1,26 +1,13 @@
 ///|
-/// A proleptic Gregorian civil date. Valid values use years 1 through 9999.
+/// A validated date in the proleptic Gregorian calendar.
 pub(all) struct Date {
   year : Int
   month : Int
   day : Int
-} derive(Eq, @debug.Debug)
+} derive(Eq, Hash, @debug.Debug)
 
 ///|
-/// Stable machine-readable diagnostic returned by public operations.
-pub(all) struct Diagnostic {
-  code : String
-  field : String
-  message : String
-} derive(Eq, @debug.Debug)
-
-///|
-fn diagnostic(code : String, field : String, message : String) -> Diagnostic {
-  { code, field, message }
-}
-
-///|
-/// Weekdays use ISO order, Monday through Sunday.
+/// Days of the week, ordered from Monday through Sunday.
 pub(all) enum Weekday {
   Monday
   Tuesday
@@ -29,7 +16,7 @@ pub(all) enum Weekday {
   Friday
   Saturday
   Sunday
-} derive(Eq, Compare, @debug.Debug)
+} derive(Eq, Hash, @debug.Debug)
 
 ///|
 pub fn is_leap_year(year : Int) -> Bool {
@@ -47,37 +34,95 @@ pub fn days_in_month(year : Int, month : Int) -> Int {
 }
 
 ///|
-pub fn Date::new(
+pub fn Date::make(
   year : Int,
   month : Int,
   day : Int,
 ) -> Result[Date, Diagnostic] {
   if year < 1 || year > 9999 {
-    return Err(diagnostic("date.year.range", "year", "year must be in 1..9999"))
+    return Err(
+      Diagnostic::new(
+        "date.year.range",
+        "year",
+        "year is outside the supported range",
+        "1..9999",
+        year.to_string(),
+      ),
+    )
   }
   if month < 1 || month > 12 {
     return Err(
-      diagnostic("date.month.range", "month", "month must be in 1..12"),
+      Diagnostic::new(
+        "date.month.range",
+        "month",
+        "month is outside the Gregorian range",
+        "1..12",
+        month.to_string(),
+      ),
     )
   }
-  let maximum = days_in_month(year, month)
-  if day < 1 || day > maximum {
+  let last = days_in_month(year, month)
+  if day < 1 || day > last {
     return Err(
-      diagnostic("date.day.range", "day", "day is outside the selected month"),
+      Diagnostic::new(
+        "date.day.range",
+        "day",
+        "day does not exist in this month",
+        "1.." + last.to_string(),
+        day.to_string(),
+      ),
     )
   }
   Ok({ year, month, day })
 }
 
 ///|
-pub fn Date::compare(self : Date, other : Date) -> Int {
-  if self.year != other.year {
-    self.year.compare(other.year)
-  } else if self.month != other.month {
-    self.month.compare(other.month)
-  } else {
-    self.day.compare(other.day)
+fn parse_fixed_digits(
+  value : StringView,
+  field : String,
+) -> Result[Int, Diagnostic] {
+  let mut result = 0
+  for char in value {
+    if char < '0' || char > '9' {
+      return Err(
+        Diagnostic::new(
+          "date.syntax",
+          field,
+          "date component must contain only digits",
+          "decimal digits",
+          value.to_owned(),
+        ),
+      )
+    }
+    result = result * 10 + char.to_int() - '0'.to_int()
   }
+  Ok(result)
+}
+
+///|
+/// Parse an ISO 8601 calendar date in `YYYY-MM-DD` form.
+pub fn Date::parse(value : String) -> Result[Date, Diagnostic] {
+  if value.length() != 10 || value[4] != '-' || value[7] != '-' {
+    return Err(
+      Diagnostic::new(
+        "date.syntax", "date", "date must use the ISO calendar form", "YYYY-MM-DD",
+        value,
+      ),
+    )
+  }
+  let year = match parse_fixed_digits(value[:4], "year") {
+    Ok(number) => number
+    Err(error) => return Err(error)
+  }
+  let month = match parse_fixed_digits(value[5:7], "month") {
+    Ok(number) => number
+    Err(error) => return Err(error)
+  }
+  let day = match parse_fixed_digits(value[8:10], "day") {
+    Ok(number) => number
+    Err(error) => return Err(error)
+  }
+  Date::make(year, month, day)
 }
 
 ///|
@@ -112,115 +157,108 @@ pub fn Date::to_iso(self : Date) -> String {
 }
 
 ///|
-fn parse_fixed_int(
-  text : StringView,
-  field : String,
-) -> Result[Int, Diagnostic] {
-  Ok(@string.parse_int(text)) catch {
-    _ => Err(diagnostic("date.syntax", field, "expected decimal digits"))
-  }
-}
-
-///|
-pub fn Date::parse(text : String) -> Result[Date, Diagnostic] {
-  let parts = text.split("-").to_array()
-  if parts.length() != 3 ||
-    parts[0].length() != 4 ||
-    parts[1].length() != 2 ||
-    parts[2].length() != 2 {
-    return Err(diagnostic("date.syntax", "date", "expected YYYY-MM-DD"))
-  }
-  match
-    (
-      parse_fixed_int(parts[0], "year"),
-      parse_fixed_int(parts[1], "month"),
-      parse_fixed_int(parts[2], "day"),
-    ) {
-    (Ok(year), Ok(month), Ok(day)) => Date::new(year, month, day)
-    (Err(error), _, _) | (_, Err(error), _) | (_, _, Err(error)) => Err(error)
-  }
-}
-
-///|
-fn days_before_year(year : Int) -> Int {
-  let y = year - 1
-  y * 365 + y / 4 - y / 100 + y / 400
-}
-
-///|
-fn days_before_month(year : Int, month : Int) -> Int {
-  let cumulative = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
-  let base = cumulative[month - 1]
-  if month > 2 && is_leap_year(year) {
-    base + 1
+pub fn Date::compare(self : Date, other : Date) -> Int {
+  if self.year != other.year {
+    self.year - other.year
+  } else if self.month != other.month {
+    self.month - other.month
   } else {
-    base
+    self.day - other.day
   }
 }
 
 ///|
-/// Returns a zero-based day number where 0001-01-01 is zero.
-pub fn Date::ordinal(self : Date) -> Int {
-  days_before_year(self.year) +
-  days_before_month(self.year, self.month) +
-  self.day -
-  1
+pub fn Date::is_before(self : Date, other : Date) -> Bool {
+  self.compare(other) < 0
 }
 
 ///|
-pub fn Date::from_ordinal(value : Int) -> Result[Date, Diagnostic] {
-  let maximum = days_before_year(10000) - 1
-  if value < 0 || value > maximum {
-    return Err(
-      diagnostic(
-        "date.ordinal.range", "ordinal", "ordinal is outside years 1..9999",
-      ),
-    )
-  }
-  let mut low = 1
-  let mut high = 10000
-  while low + 1 < high {
-    let middle = (low + high) / 2
-    if days_before_year(middle) <= value {
-      low = middle
-    } else {
-      high = middle
-    }
-  }
-  let year = low
-  let day_of_year = value - days_before_year(year)
-  let mut month = 1
-  while month < 12 && days_before_month(year, month + 1) <= day_of_year {
-    month = month + 1
-  }
-  Date::new(year, month, day_of_year - days_before_month(year, month) + 1)
+pub fn Date::is_after(self : Date, other : Date) -> Bool {
+  self.compare(other) > 0
+}
+
+///|
+/// Number of days since 1970-01-01. Valid for the complete supported year range.
+pub fn Date::epoch_day(self : Date) -> Int64 {
+  let mut year = self.year
+  let month = self.month
+  year = year - (if month <= 2 { 1 } else { 0 })
+  let era = year / 400
+  let year_of_era = year - era * 400
+  let shifted_month = month + (if month > 2 { -3 } else { 9 })
+  let day_of_year = (153 * shifted_month + 2) / 5 + self.day - 1
+  let day_of_era = year_of_era * 365 +
+    year_of_era / 4 -
+    year_of_era / 100 +
+    day_of_year
+  (era * 146097 + day_of_era - 719468).to_int64()
+}
+
+///|
+fn date_from_epoch_day(value : Int64) -> Date {
+  let shifted = value + 719468L
+  let era = shifted / 146097L
+  let day_of_era = shifted - era * 146097L
+  let year_of_era = (
+      day_of_era -
+      day_of_era / 1460L +
+      day_of_era / 36524L -
+      day_of_era / 146096L
+    ) /
+    365L
+  let year = year_of_era + era * 400L
+  let day_of_year = day_of_era -
+    (365L * year_of_era + year_of_era / 4L - year_of_era / 100L)
+  let month_prime = (5L * day_of_year + 2L) / 153L
+  let day = day_of_year - (153L * month_prime + 2L) / 5L + 1L
+  let month = month_prime + (if month_prime < 10L { 3L } else { -9L })
+  let adjusted_year = year + (if month <= 2L { 1L } else { 0L })
+  { year: adjusted_year.to_int(), month: month.to_int(), day: day.to_int() }
 }
 
 ///|
 pub fn Date::add_days(self : Date, amount : Int) -> Result[Date, Diagnostic] {
-  Date::from_ordinal(self.ordinal() + amount)
+  let candidate = date_from_epoch_day(self.epoch_day() + amount.to_int64())
+  if candidate.year < 1 || candidate.year > 9999 {
+    Err(
+      Diagnostic::new(
+        "date.overflow",
+        "date",
+        "date arithmetic left the supported range",
+        "year 1..9999",
+        candidate.year.to_string(),
+      ),
+    )
+  } else {
+    Ok(candidate)
+  }
 }
 
 ///|
-/// Shifts by calendar months, clamping the day to the target month's last day.
+/// Add calendar months, clamping the day to the final valid day of the target month.
 pub fn Date::add_months(self : Date, amount : Int) -> Result[Date, Diagnostic] {
-  let absolute = self.year * 12 + self.month - 1 + amount
-  if absolute < 12 || absolute >= 10000 * 12 {
+  let index = self.year * 12 + self.month - 1 + amount
+  if index < 12 || index >= 120000 {
     return Err(
-      diagnostic(
-        "date.month_shift.range", "amount", "month shift leaves years 1..9999",
+      Diagnostic::new(
+        "date.overflow",
+        "date",
+        "month arithmetic left the supported range",
+        "year 1..9999",
+        index.to_string(),
       ),
     )
   }
-  let year = absolute / 12
-  let month = absolute % 12 + 1
+  let year = index / 12
+  let month = index % 12 + 1
   let day = self.day.min(days_in_month(year, month))
-  Date::new(year, month, day)
+  Ok({ year, month, day })
 }
 
 ///|
 pub fn Date::weekday(self : Date) -> Weekday {
-  match self.ordinal() % 7 {
+  let index = ((self.epoch_day() + 3L) % 7L + 7L) % 7L
+  match index.to_int() {
     0 => Monday
     1 => Tuesday
     2 => Wednesday
@@ -241,5 +279,25 @@ pub fn Weekday::short_name(self : Weekday) -> String {
     Friday => "FR"
     Saturday => "SA"
     Sunday => "SU"
+  }
+}
+
+///|
+pub fn Weekday::parse(value : String) -> Result[Weekday, Diagnostic] {
+  match value {
+    "MO" => Ok(Monday)
+    "TU" => Ok(Tuesday)
+    "WE" => Ok(Wednesday)
+    "TH" => Ok(Thursday)
+    "FR" => Ok(Friday)
+    "SA" => Ok(Saturday)
+    "SU" => Ok(Sunday)
+    _ =>
+      Err(
+        Diagnostic::new(
+          "weekday.invalid", "BYDAY", "unknown weekday token", "MO,TU,WE,TH,FR,SA,SU",
+          value,
+        ),
+      )
   }
 }
