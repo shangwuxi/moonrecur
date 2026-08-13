@@ -4,5 +4,6 @@ _build/
 .mooncakes/
 *.tmp
 *.log
+submission/
 submission.md
 local-audit.md
