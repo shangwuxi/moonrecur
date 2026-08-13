@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "Han-Wentao/moonrecur"
+package "shangwuxi/moonrecur"
 
 import {
   "moonbitlang/core/debug",

@@ -29,9 +29,11 @@ unsupported rule fields listed in [the support matrix](docs/SUPPORTED_RRULE.md).
 
 MoonRecur currently requires the MoonBit toolchain used by the repository CI.
 
-From a MoonRecur source checkout:
+Clone the public repository and resolve its dependency:
 
 ```sh
+git clone https://github.com/shangwuxi/moonrecur.git
+cd moonrecur
 moon update
 moon test --target wasm-gc
 ```

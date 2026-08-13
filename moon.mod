@@ -9,13 +9,13 @@
 //   "moonbitlang/x@0.4.6",
 // }
 
-name = "Han-Wentao/moonrecur"
+name = "shangwuxi/moonrecur"
 
 version = "0.1.0"
 
 readme = "README.md"
 
-repository = ""
+repository = "https://github.com/shangwuxi/moonrecur"
 
 license = "Apache-2.0"
 
