@@ -13,6 +13,7 @@ pub let help_text =
   #|  moonrecur validate --rule RRULE
   #|  moonrecur explain  --rule RRULE
   #|  moonrecur expand   --start DATE --rule RRULE --from DATE --through DATE [--limit N]
+  #|                    [--rdate DATE ...] [--exdate DATE ...]
   #|
   #|DATES: YYYY-MM-DD
   #|EXIT CODES: 0 success, 2 usage or validation error
@@ -35,6 +36,32 @@ fn option(args : Array[String], name : String) -> String? {
     }
   }
   None
+}
+
+///|
+fn options(args : Array[String], name : String) -> Array[String] {
+  let values = []
+  for index = 0; index < args.length(); index = index + 1 {
+    if args[index] == name && index + 1 < args.length() {
+      values.push(args[index + 1])
+    }
+  }
+  values
+}
+
+///|
+fn command_dates(
+  args : Array[String],
+  name : String,
+) -> Result[Array[Date], CommandResult] {
+  let result = []
+  for source in options(args, name) {
+    match Date::parse(source) {
+      Ok(date) => result.push(date)
+      Err(error) => return Err(command_error(error.to_text()))
+    }
+  }
+  Ok(result)
 }
 
 ///|
@@ -151,7 +178,15 @@ fn expand_command(args : Array[String]) -> CommandResult {
     Ok(value) => value
     Err(error) => return command_error(error.to_text())
   }
-  match expand(start, rule, window) {
+  let additions = match command_dates(args, "--rdate") {
+    Ok(values) => values
+    Err(error) => return error
+  }
+  let exclusions = match command_dates(args, "--exdate") {
+    Ok(values) => values
+    Err(error) => return error
+  }
+  match expand_set(start, rule, window, additions, exclusions) {
     Ok(values) =>
       command_success(
         "occurrences: " +

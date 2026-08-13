@@ -142,3 +142,28 @@ test "reject reversed, excessive and invalid limits" {
   }
   assert_eq(limit.code(), "expand.limit.range")
 }
+
+///|
+test "reject an expansion scan longer than one thousand years" {
+  let rule = @moonrecur.Rule::parse("FREQ=YEARLY").unwrap()
+  guard @moonrecur.expand(
+      date("0001-01-01"),
+      rule,
+      window("0001-01-01", "2000-01-01", 10),
+    )
+    is Err(error) else {
+    fail("expected scan limit error")
+  }
+  assert_eq(error.code(), "expand.scan.too_large")
+}
+
+///|
+test "window before DTSTART returns an empty expansion" {
+  let rule = @moonrecur.Rule::parse("FREQ=DAILY").unwrap()
+  let values = @moonrecur.expand(
+    date("2026-02-01"),
+    rule,
+    window("2026-01-01", "2026-01-31", 10),
+  ).unwrap()
+  assert_true(values.is_empty())
+}
