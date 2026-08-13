@@ -1,7 +1,7 @@
 target/
 _build/
 .moon/
-_build/
+.mooncakes/
 *.tmp
 *.log
 submission.md
