@@ -44,6 +44,26 @@ pub fn Diagnostic::message(Self) -> String
 pub fn Diagnostic::new(String, String, String, String, String) -> Self
 pub fn Diagnostic::to_text(Self) -> String
 
+pub(all) enum Frequency {
+  Daily
+  Weekly
+  Monthly
+  Yearly
+} derive(Eq, @debug.Debug)
+pub fn Frequency::name(Self) -> String
+
+pub(all) struct Rule {
+  frequency : Frequency
+  interval : Int
+  count : Int?
+  until : Date?
+  by_weekday : Array[Weekday]
+  by_month_day : Array[Int]
+  by_month : Array[Int]
+} derive(Eq, @debug.Debug)
+pub fn Rule::canonical(Self) -> String
+pub fn Rule::parse(String) -> Result[Self, Diagnostic]
+
 pub(all) enum Weekday {
   Monday
   Tuesday
