@@ -1,3 +1,6 @@
 #!/bin/sh
+set -eu
 
-moon check
+moon fmt --check
+moon check --target wasm-gc --deny-warn
+moon test --target wasm-gc

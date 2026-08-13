@@ -1,33 +1,28 @@
-# MoonRecur examples
+# Runnable examples
 
-Run these commands from the repository root.
+Run these commands from the repository root after `moon update`.
 
-## Normalize and validate
-
-```sh
-moon run cmd/moonrecur -- validate --rule "BYDAY=WE,MO;COUNT=4;FREQ=WEEKLY"
-moon run cmd/moonrecur -- explain --rule "FREQ=MONTHLY;BYMONTHDAY=-1"
-```
-
-## Expand with exceptions
+## Normalize a weekly rule
 
 ```sh
-moon run cmd/moonrecur -- expand \
-  --start 2026-08-03 \
-  --rule "FREQ=WEEKLY;BYDAY=MO,WE;COUNT=6" \
-  --from 2026-08-01 \
-  --through 2026-09-01 \
-  --rdate 2026-08-07 \
-  --exdate 2026-08-05
+moon run cmd/moonrecur --target js -- validate --rule "BYDAY=WE,MO;COUNT=4;FREQ=WEEKLY"
 ```
 
-The command prints a deterministic, ordered set. Repeated additions are
-deduplicated and exclusions take precedence.
+Expected output is stored in `weekly.expected.txt`.
 
-## Invalid input
+## Expand a leap-year month-end rule
 
 ```sh
-moon run cmd/moonrecur -- validate --rule "FREQ=MONTHLY;BYMONTHDAY=0"
+moon run cmd/moonrecur --target js -- expand --start 2024-01-31 --rule "FREQ=MONTHLY;COUNT=3" --from 2024-01-01 --through 2024-06-30
 ```
 
-The process returns exit code 2 and a stable `rule.value.range` diagnostic.
+Expected output is stored in `month-end.expected.txt`.
+
+## Observe a stable invalid-input diagnostic
+
+```sh
+moon run cmd/moonrecur --target js -- validate --rule "FREQ=MONTHLY;BYMONTH=13"
+```
+
+The command exits with status 2. Expected output is stored in
+`invalid-month.expected.txt`.

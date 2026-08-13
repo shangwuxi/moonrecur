@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    name: Portable checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install MoonBit
+        uses: moonbit-community/setup-moonbit@04293a8a813bfd4b6c2fce22701b52ae1050d100
+        with:
+          version: latest
+      - name: Resolve dependencies
+        run: moon update
+      - name: Format and strict checks
+        run: |
+          moon fmt --check
+          moon check --target wasm-gc --deny-warn
+          moon check --target wasm --deny-warn
+          moon check --target js --deny-warn
+      - name: WasmGC tests
+        run: moon test --target wasm-gc
+      - name: Exercise JavaScript CLI
+        run: |
+          moon run cmd/moonrecur --target js -- validate --rule 'FREQ=WEEKLY;COUNT=4;BYDAY=WE,MO' | tee weekly.txt
+          diff -u examples/weekly.expected.txt weekly.txt
+          moon run cmd/moonrecur --target js -- expand --start 2024-01-31 --rule 'FREQ=MONTHLY;COUNT=3' --from 2024-01-01 --through 2024-06-30 | tee month-end.txt
+          diff -u examples/month-end.expected.txt month-end.txt
+          set +e
+          moon run cmd/moonrecur --target js -- validate --rule 'FREQ=MONTHLY;BYMONTH=13' > invalid.txt
+          status=$?
+          set -e
+          test "$status" = "2"
+          diff -u examples/invalid-month.expected.txt invalid.txt
+
+  native:
+    name: Native checks and CLI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install MoonBit
+        uses: moonbit-community/setup-moonbit@04293a8a813bfd4b6c2fce22701b52ae1050d100
+        with:
+          version: latest
+      - name: Resolve dependencies
+        run: moon update
+      - name: Native verification
+        run: |
+          moon check --target native --deny-warn
+          moon test --target native
+          moon build cmd/moonrecur --target native --release
+          moon run cmd/moonrecur --target native -- validate --rule 'FREQ=WEEKLY;COUNT=4;BYDAY=WE,MO'
+          moon run cmd/moonrecur --target native -- expand --start 2024-01-31 --rule 'FREQ=MONTHLY;COUNT=3' --from 2024-01-01 --through 2024-06-30

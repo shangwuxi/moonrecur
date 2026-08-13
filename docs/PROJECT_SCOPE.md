@@ -26,7 +26,7 @@ CLI, JSON, documentation, and CI practices are engineering infrastructure only.
 - Explicit inclusion and exclusion dates.
 - Bounded expansion with deterministic ordering and duplicate removal.
 - Stable parse and validation diagnostics.
-- Human-readable and JSON CLI output.
+- Human-readable CLI output and stable process exit codes.
 
 ## Partial behavior
 
@@ -74,5 +74,7 @@ CLI, JSON, documentation, and CI practices are engineering infrastructure only.
 
 ## Licensing and dependencies
 
-The project uses the OSI-approved Apache-2.0 License. The implementation is original and uses only the
-MoonBit standard library. There are no borrowed code assets or runtime packages.
+The project uses the OSI-approved Apache-2.0 License. The domain implementation is
+original and uses MoonBit core. The executable imports `moonbitlang/x/sys` 0.4.49
+only to return a portable process exit code; it is Apache-2.0 and documented in
+`THIRD_PARTY.md`. There are no borrowed code or media assets.

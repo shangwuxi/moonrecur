@@ -1,0 +1,1 @@
+rule.value.range at BYMONTH: selector is outside its supported range (expected 1..12, got 13)
