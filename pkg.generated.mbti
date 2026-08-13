@@ -6,7 +6,13 @@ import {
 }
 
 // Values
+pub fn dates_to_lines(Array[Date]) -> String
+
 pub fn days_in_month(Int, Int) -> Int
+
+pub fn expand(Date, Rule, ExpansionWindow) -> Result[Array[Date], Diagnostic]
+
+pub fn expand_set(Date, Rule, ExpansionWindow, Array[Date], Array[Date]) -> Result[Array[Date], Diagnostic]
 
 pub fn is_leap_year(Int) -> Bool
 
@@ -43,6 +49,13 @@ pub fn Diagnostic::field(Self) -> String
 pub fn Diagnostic::message(Self) -> String
 pub fn Diagnostic::new(String, String, String, String, String) -> Self
 pub fn Diagnostic::to_text(Self) -> String
+
+pub(all) struct ExpansionWindow {
+  from : Date
+  through : Date
+  limit : Int
+} derive(Eq, @debug.Debug)
+pub fn ExpansionWindow::make(Date, Date, Int) -> Result[Self, Diagnostic]
 
 pub(all) enum Frequency {
   Daily
