@@ -1,5 +1,0 @@
-// import {
-//   "han-wentao/moonrecur" @lib,
-// }
-
-pkgtype(kind: "executable")

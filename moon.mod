@@ -24,3 +24,7 @@ keywords = [ "calendar", "recurrence", "rrule", "scheduling" ]
 preferred_target = "wasm-gc"
 
 description = "Deterministic civil-calendar recurrence expansion for MoonBit"
+
+import {
+  "moonbitlang/x@0.4.49",
+}
