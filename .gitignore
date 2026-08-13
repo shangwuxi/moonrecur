@@ -1,4 +1,5 @@
 target/
+_build/
 .moon/
 _build/
 *.tmp
