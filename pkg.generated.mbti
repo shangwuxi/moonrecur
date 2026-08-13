@@ -14,11 +14,35 @@ pub fn expand(Date, Rule, ExpansionWindow) -> Result[Array[Date], Diagnostic]
 
 pub fn expand_set(Date, Rule, ExpansionWindow, Array[Date], Array[Date]) -> Result[Array[Date], Diagnostic]
 
+pub fn find_conflicts(Array[BusySpan]) -> Array[Conflict]
+
+pub fn find_free(Date, Date, Array[BusySpan]) -> Result[Array[FreeSpan], Diagnostic]
+
 pub fn is_leap_year(Int) -> Bool
+
+pub fn merge_busy(Array[BusySpan]) -> Array[BusySpan]
+
+pub fn occurrences_to_busy(String, Array[Date], Int) -> Result[Array[BusySpan], Diagnostic]
 
 // Errors
 
 // Types and methods
+pub(all) struct BusySpan {
+  label : String
+  start : Date
+  end : Date
+} derive(Eq, @debug.Debug)
+pub fn BusySpan::make(String, Date, Date) -> Result[Self, Diagnostic]
+pub fn BusySpan::to_text(Self) -> String
+
+pub(all) struct Conflict {
+  left_label : String
+  right_label : String
+  overlap_start : Date
+  overlap_end : Date
+} derive(Eq, @debug.Debug)
+pub fn Conflict::to_text(Self) -> String
+
 pub(all) struct Date {
   year : Int
   month : Int
@@ -56,6 +80,12 @@ pub(all) struct ExpansionWindow {
   limit : Int
 } derive(Eq, @debug.Debug)
 pub fn ExpansionWindow::make(Date, Date, Int) -> Result[Self, Diagnostic]
+
+pub(all) struct FreeSpan {
+  start : Date
+  end : Date
+} derive(Eq, @debug.Debug)
+pub fn FreeSpan::to_text(Self) -> String
 
 pub(all) enum Frequency {
   Daily
