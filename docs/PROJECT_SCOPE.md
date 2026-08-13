@@ -51,8 +51,28 @@ CLI, JSON, documentation, and CI practices are engineering infrastructure only.
    requests without a finite result limit.
 6. Run the same tests under wasm-gc, wasm, JavaScript, and native checks.
 
+## Selected fingerprint
+
+- **Problem domain:** civil-calendar recurrence and schedule analysis.
+- **Primary users:** MoonBit application authors building calendars, reminders,
+  booking systems, and offline schedulers.
+- **Primary workflow:** parse a start date and recurrence rule, validate and
+  canonicalize it, expand bounded occurrences, apply additions and exclusions,
+  then inspect the result.
+- **Core data:** Gregorian dates, weekdays, recurrence frequencies, BY selectors,
+  inclusion dates, exclusion dates, and occurrence sets.
+- **Central techniques:** Gregorian arithmetic, canonical rule parsing, bounded
+  recurrence generation, selector filtering, and set normalization.
+- **Outputs:** canonical rules, occurrence sequences, stable diagnostics, and CLI
+  human/JSON representations.
+- **Acceptance demonstration:** expand monthly recurrence across leap-day and
+  month-end boundaries, apply additions/exclusions, and reject invalid or unbounded
+  requests.
+- **Explicit non-goals:** timezone databases, CalDAV networking, complete iCalendar
+  documents, benchmark statistics, OpenAPI validation, HTTP mocks, and generic
+  constraint solving.
+
 ## Licensing and dependencies
 
-The project uses Apache-2.0. The implementation is original and uses only the
+The project uses the OSI-approved Apache-2.0 License. The implementation is original and uses only the
 MoonBit standard library. There are no borrowed code assets or runtime packages.
-

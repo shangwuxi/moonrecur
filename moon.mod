@@ -9,11 +9,11 @@
 //   "moonbitlang/x@0.4.6",
 // }
 
-name = "han-wentao/moonrecur"
+name = "Han-Wentao/moonrecur"
 
 version = "0.1.0"
 
-readme = "README.mbt.md"
+readme = "README.md"
 
 repository = ""
 
