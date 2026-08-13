@@ -167,3 +167,41 @@ test "window before DTSTART returns an empty expansion" {
   ).unwrap()
   assert_true(values.is_empty())
 }
+
+///|
+test "positive month-day and month selectors filter candidates" {
+  let rule = @moonrecur.Rule::parse(
+    "FREQ=MONTHLY;BYMONTHDAY=15;BYMONTH=2,3;COUNT=2",
+  ).unwrap()
+  let values = @moonrecur.expand(
+    date("2026-01-01"),
+    rule,
+    window("2026-01-01", "2027-12-31", 10),
+  ).unwrap()
+  assert_eq(@moonrecur.dates_to_lines(values), "2026-02-15\n2026-03-15")
+}
+
+///|
+test "UNTIL beyond the window preserves the caller bound" {
+  let rule = @moonrecur.Rule::parse("FREQ=DAILY;UNTIL=2026-02-01").unwrap()
+  let values = @moonrecur.expand(
+    date("2026-01-01"),
+    rule,
+    window("2026-01-01", "2026-01-03", 10),
+  ).unwrap()
+  assert_eq(
+    @moonrecur.dates_to_lines(values),
+    "2026-01-01\n2026-01-02\n2026-01-03",
+  )
+}
+
+///|
+test "result limit stops otherwise unbounded rules" {
+  let rule = @moonrecur.Rule::parse("FREQ=DAILY").unwrap()
+  let values = @moonrecur.expand(
+    date("2026-01-01"),
+    rule,
+    window("2026-01-01", "2026-12-31", 2),
+  ).unwrap()
+  assert_eq(@moonrecur.dates_to_lines(values), "2026-01-01\n2026-01-02")
+}

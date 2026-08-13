@@ -63,3 +63,18 @@ test "reject invalid schedule spans and durations" {
   }
   assert_eq(duration.code(), "schedule.duration.range")
 }
+
+///|
+test "free ranges include the trailing window and reject reversed windows" {
+  let free = @moonrecur.find_free(date("2026-08-01"), date("2026-08-10"), [
+    @moonrecur.BusySpan::make("opening", date("2026-08-01"), date("2026-08-02")).unwrap(),
+  ]).unwrap()
+  assert_eq(free.length(), 1)
+  assert_eq(free[0].to_text(), "2026-08-03..2026-08-10")
+  assert_eq(
+    @moonrecur.find_free(date("2026-08-10"), date("2026-08-01"), [])
+    .unwrap_err()
+    .code(),
+    "schedule.window.order",
+  )
+}

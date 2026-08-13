@@ -69,3 +69,66 @@ test "date arithmetic rejects supported-range overflow" {
   guard last.add_days(1) is Err(error) else { fail("expected overflow") }
   assert_eq(error.code(), "date.overflow")
 }
+
+///|
+test "date constructors reject component bounds and non-digits" {
+  assert_eq(
+    @moonrecur.Date::make(0, 1, 1).unwrap_err().code(),
+    "date.year.range",
+  )
+  assert_eq(
+    @moonrecur.Date::make(10000, 1, 1).unwrap_err().code(),
+    "date.year.range",
+  )
+  assert_eq(
+    @moonrecur.Date::make(2026, 0, 1).unwrap_err().code(),
+    "date.month.range",
+  )
+  assert_eq(
+    @moonrecur.Date::make(2026, 13, 1).unwrap_err().code(),
+    "date.month.range",
+  )
+  assert_eq(
+    @moonrecur.Date::parse("20x6-08-13").unwrap_err().code(),
+    "date.syntax",
+  )
+  assert_eq(
+    @moonrecur.Date::parse("2026-0x-13").unwrap_err().code(),
+    "date.syntax",
+  )
+  assert_eq(
+    @moonrecur.Date::parse("2026-08-1x").unwrap_err().code(),
+    "date.syntax",
+  )
+}
+
+///|
+test "month arithmetic rejects year overflow" {
+  assert_eq(
+    @moonrecur.Date::parse("0001-01-01")
+    .unwrap()
+    .add_months(-1)
+    .unwrap_err()
+    .code(),
+    "date.overflow",
+  )
+  assert_eq(
+    @moonrecur.Date::parse("9999-12-31")
+    .unwrap()
+    .add_months(1)
+    .unwrap_err()
+    .code(),
+    "date.overflow",
+  )
+}
+
+///|
+test "all weekday tokens parse and format" {
+  for token in ["MO", "TU", "WE", "TH", "FR", "SA", "SU"] {
+    assert_eq(@moonrecur.Weekday::parse(token).unwrap().short_name(), token)
+  }
+  assert_eq(
+    @moonrecur.Weekday::parse("XX").unwrap_err().code(),
+    "weekday.invalid",
+  )
+}

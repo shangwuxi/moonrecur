@@ -67,3 +67,52 @@ test "reject ordinal weekdays and malformed properties" {
   }
   assert_eq(syntax.code(), "rule.property.syntax")
 }
+
+///|
+test "reject empty unknown and sub-daily frequencies" {
+  assert_eq(@moonrecur.Rule::parse("").unwrap_err().code(), "rule.empty")
+  assert_eq(
+    @moonrecur.Rule::parse("FREQ=SECONDLY").unwrap_err().code(),
+    "rule.frequency.unsupported",
+  )
+  assert_eq(
+    @moonrecur.Rule::parse("FREQ=SOMETIMES").unwrap_err().code(),
+    "rule.frequency.invalid",
+  )
+  assert_eq(
+    @moonrecur.Rule::parse("FREQ=").unwrap_err().code(),
+    "rule.property.syntax",
+  )
+}
+
+///|
+test "reject malformed and out-of-range numeric controls" {
+  assert_eq(
+    @moonrecur.Rule::parse("FREQ=DAILY;INTERVAL=no").unwrap_err().code(),
+    "rule.integer.syntax",
+  )
+  assert_eq(
+    @moonrecur.Rule::parse("FREQ=DAILY;INTERVAL=0").unwrap_err().code(),
+    "rule.interval.range",
+  )
+  assert_eq(
+    @moonrecur.Rule::parse("FREQ=DAILY;COUNT=100001").unwrap_err().code(),
+    "rule.count.range",
+  )
+  assert_eq(
+    @moonrecur.Rule::parse("FREQ=DAILY;UNTIL=2026-02-29").unwrap_err().code(),
+    "rule.until.invalid",
+  )
+}
+
+///|
+test "reject unsupported DAILY weekday filter and bad weekday token" {
+  assert_eq(
+    @moonrecur.Rule::parse("FREQ=DAILY;BYDAY=MO").unwrap_err().code(),
+    "rule.combination.unsupported",
+  )
+  assert_eq(
+    @moonrecur.Rule::parse("FREQ=WEEKLY;BYDAY=XY").unwrap_err().code(),
+    "weekday.invalid",
+  )
+}

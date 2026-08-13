@@ -44,6 +44,37 @@ test "CLI rejects malformed exception dates" {
 }
 
 ///|
+test "CLI validates numeric limits windows and help" {
+  assert_true(@moonrecur.execute([]).output.contains("USAGE:"))
+  let text_limit = @moonrecur.execute([
+    "expand", "--rule", "FREQ=DAILY", "--start", "2026-01-01", "--from", "2026-01-01",
+    "--through", "2026-01-02", "--limit", "many",
+  ])
+  assert_eq(text_limit.exit_code, 2)
+  assert_true(text_limit.output.contains("--limit must be an integer"))
+  let reversed = @moonrecur.execute([
+    "expand", "--rule", "FREQ=DAILY", "--start", "2026-01-01", "--from", "2026-01-02",
+    "--through", "2026-01-01",
+  ])
+  assert_eq(reversed.exit_code, 2)
+  assert_true(reversed.output.contains("expand.window.order"))
+}
+
+///|
+test "CLI explain renders COUNT and UNTIL termination" {
+  assert_true(
+    @moonrecur.execute(["explain", "--rule", "FREQ=DAILY;COUNT=2"]).output.contains(
+      "termination: count=2",
+    ),
+  )
+  assert_true(
+    @moonrecur.execute(["explain", "--rule", "FREQ=YEARLY;UNTIL=2030-01-01"]).output.contains(
+      "termination: until=2030-01-01",
+    ),
+  )
+}
+
+///|
 test "CLI reports input diagnostics and usage errors" {
   let invalid = @moonrecur.execute([
     "validate", "--rule", "FREQ=MONTHLY;BYMONTH=13",
