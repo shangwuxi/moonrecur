@@ -250,7 +250,7 @@ pub fn expand_set(
 
 ///|
 pub fn dates_to_lines(values : Array[Date]) -> String {
-  let output = StringBuilder::new()
+  let output = StringBuilder()
   for index, value in values {
     if index > 0 {
       output.write_char('\n')

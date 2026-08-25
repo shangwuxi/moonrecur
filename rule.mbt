@@ -387,7 +387,7 @@ fn append_int_list(builder : StringBuilder, values : Array[Int]) -> Unit {
 ///|
 /// Render a stable field order with normalized selector ordering and duplicates removed.
 pub fn Rule::canonical(self : Rule) -> String {
-  let output = StringBuilder::new()
+  let output = StringBuilder()
   output.write_string("FREQ=" + self.frequency.name())
   if self.interval != 1 {
     output.write_string(";INTERVAL=" + self.interval.to_string())

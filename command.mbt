@@ -126,7 +126,7 @@ fn command_busy_spans(
 
 ///|
 fn conflicts_to_lines(values : Array[Conflict]) -> String {
-  let output = StringBuilder::new()
+  let output = StringBuilder()
   for index, value in values {
     if index > 0 {
       output.write_char('\n')
@@ -138,7 +138,7 @@ fn conflicts_to_lines(values : Array[Conflict]) -> String {
 
 ///|
 fn free_to_lines(values : Array[FreeSpan]) -> String {
-  let output = StringBuilder::new()
+  let output = StringBuilder()
   for index, value in values {
     if index > 0 {
       output.write_char('\n')
