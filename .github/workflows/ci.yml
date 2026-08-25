@@ -34,6 +34,10 @@ jobs:
           diff -u examples/weekly.expected.txt weekly.txt
           moon run cmd/moonrecur --target js -- expand --start 2024-01-31 --rule 'FREQ=MONTHLY;COUNT=3' --from 2024-01-01 --through 2024-06-30 | tee month-end.txt
           diff -u examples/month-end.expected.txt month-end.txt
+          moon run cmd/moonrecur --target js -- conflicts --busy 'release:2026-08-10..2026-08-12' --busy 'review:2026-08-12..2026-08-13' --busy 'travel:2026-08-20..2026-08-21' | tee conflicts.txt
+          diff -u examples/conflicts.expected.txt conflicts.txt
+          moon run cmd/moonrecur --target js -- free --from 2026-08-01 --through 2026-08-10 --busy 'before:2026-07-20..2026-08-02' --busy 'middle:2026-08-05..2026-08-06' --busy 'after:2026-08-10..2026-08-20' | tee free.txt
+          diff -u examples/free.expected.txt free.txt
           set +e
           moon run cmd/moonrecur --target js -- validate --rule 'FREQ=MONTHLY;BYMONTH=13' > invalid.txt
           status=$?
@@ -59,3 +63,5 @@ jobs:
           moon build cmd/moonrecur --target native --release
           moon run cmd/moonrecur --target native -- validate --rule 'FREQ=WEEKLY;COUNT=4;BYDAY=WE,MO'
           moon run cmd/moonrecur --target native -- expand --start 2024-01-31 --rule 'FREQ=MONTHLY;COUNT=3' --from 2024-01-01 --through 2024-06-30
+          moon run cmd/moonrecur --target native -- conflicts --busy 'release:2026-08-10..2026-08-12' --busy 'review:2026-08-12..2026-08-13'
+          moon run cmd/moonrecur --target native -- free --from 2026-08-01 --through 2026-08-10 --busy 'middle:2026-08-05..2026-08-06'

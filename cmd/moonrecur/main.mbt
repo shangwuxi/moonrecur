@@ -8,6 +8,8 @@ fn main {
         value == "validate" ||
         value == "explain" ||
         value == "expand" ||
+        value == "conflicts" ||
+        value == "free" ||
         value == "help" ||
         value == "--help" ||
         value == "-h"

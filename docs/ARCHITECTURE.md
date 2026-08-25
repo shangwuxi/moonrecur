@@ -10,7 +10,8 @@ thin executable package.
    applies COUNT/UNTIL, and normalizes additions and exclusions.
 4. `schedule.mbt` turns occurrences into inclusive busy spans and provides conflict,
    merge, and free-range algorithms.
-5. `command.mbt` maps portable command arguments to library calls. The executable in
+5. `command.mbt` maps portable command arguments to recurrence and schedule library
+   calls, including strict `LABEL:START..END` busy-span parsing. The executable in
    `cmd/moonrecur` only reads process arguments, prints output, and applies exit codes.
 
 ## Invariants

@@ -19,7 +19,7 @@ a timezone database or network service.
   exclusions.
 - Inclusive all-day busy spans, pairwise conflict detection, merging, and free-range
   discovery.
-- Stable diagnostic codes and a portable CLI command layer.
+- Stable diagnostic codes and a portable CLI for recurrence and schedule analysis.
 
 This is deliberately not a complete iCalendar parser. It does not handle time of
 day, timezone transitions, `.ics` containers, CalDAV, ordinal weekdays, or the
@@ -86,6 +86,37 @@ Invalid input produces a stable diagnostic and exits with code 2:
 ```sh
 moon run cmd/moonrecur --target js -- validate \
   --rule 'FREQ=MONTHLY;BYMONTH=13'
+```
+
+Find overlaps between inclusive all-day busy spans:
+
+```sh
+moon run cmd/moonrecur --target js -- conflicts \
+  --busy 'release:2026-08-10..2026-08-12' \
+  --busy 'review:2026-08-12..2026-08-13' \
+  --busy 'travel:2026-08-20..2026-08-21'
+```
+
+```text
+conflicts: 1
+release <> review:2026-08-12..2026-08-12
+```
+
+Find free ranges inside a query window. Busy spans are clipped to the window,
+sorted, and merged before free ranges are calculated:
+
+```sh
+moon run cmd/moonrecur --target js -- free \
+  --from 2026-08-01 --through 2026-08-10 \
+  --busy 'before:2026-07-20..2026-08-02' \
+  --busy 'middle:2026-08-05..2026-08-06' \
+  --busy 'after:2026-08-10..2026-08-20'
+```
+
+```text
+free: 2
+2026-08-03..2026-08-04
+2026-08-07..2026-08-09
 ```
 
 ## Library example

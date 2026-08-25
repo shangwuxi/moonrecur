@@ -6,7 +6,7 @@ pub(all) struct CommandResult {
 
 ///|
 pub let help_text =
-  #|MoonRecur 0.1.0
+  #|MoonRecur 0.2.0
   #|Deterministic civil-calendar recurrence expansion for MoonBit.
   #|
   #|USAGE:
@@ -14,8 +14,11 @@ pub let help_text =
   #|  moonrecur explain  --rule RRULE
   #|  moonrecur expand   --start DATE --rule RRULE --from DATE --through DATE [--limit N]
   #|                    [--rdate DATE ...] [--exdate DATE ...]
+  #|  moonrecur conflicts --busy LABEL:START..END [--busy LABEL:START..END ...]
+  #|  moonrecur free      --from DATE --through DATE [--busy LABEL:START..END ...]
   #|
   #|DATES: YYYY-MM-DD
+  #|BUSY SPANS: LABEL:START..END (inclusive)
   #|EXIT CODES: 0 success, 2 usage or validation error
 
 ///|
@@ -62,6 +65,87 @@ fn command_dates(
     }
   }
   Ok(result)
+}
+
+///|
+fn parse_busy_span(source : String) -> Result[BusySpan, CommandResult] {
+  let colon = match source.find(":") {
+    Some(index) => index
+    None =>
+      return Err(
+        command_error(
+          "invalid --busy span: expected LABEL:START..END, got " + source,
+        ),
+      )
+  }
+  let range = source[colon + 1:]
+  let separator = match range.find("..") {
+    Some(index) => index
+    None =>
+      return Err(
+        command_error(
+          "invalid --busy span: expected LABEL:START..END, got " + source,
+        ),
+      )
+  }
+  let label = source[:colon].to_owned()
+  let start_source = range[:separator].to_owned()
+  let end_source = range[separator + 2:].to_owned()
+  let start = match Date::parse(start_source) {
+    Ok(value) => value
+    Err(error) => return Err(command_error(error.to_text()))
+  }
+  let end = match Date::parse(end_source) {
+    Ok(value) => value
+    Err(error) => return Err(command_error(error.to_text()))
+  }
+  match BusySpan::make(label, start, end) {
+    Ok(value) => Ok(value)
+    Err(error) => Err(command_error(error.to_text()))
+  }
+}
+
+///|
+fn command_busy_spans(
+  args : Array[String],
+) -> Result[Array[BusySpan], CommandResult] {
+  let result = []
+  for index = 0; index < args.length(); index = index + 1 {
+    if args[index] == "--busy" {
+      if index + 1 >= args.length() || args[index + 1].has_prefix("--") {
+        return Err(command_error("missing value for option --busy"))
+      }
+      match parse_busy_span(args[index + 1]) {
+        Ok(value) => result.push(value)
+        Err(error) => return Err(error)
+      }
+    }
+  }
+  Ok(result)
+}
+
+///|
+fn conflicts_to_lines(values : Array[Conflict]) -> String {
+  let output = StringBuilder::new()
+  for index, value in values {
+    if index > 0 {
+      output.write_char('\n')
+    }
+    output.write_string(value.to_text())
+  }
+  output.to_string()
+}
+
+///|
+fn free_to_lines(values : Array[FreeSpan]) -> String {
+  let output = StringBuilder::new()
+  for index, value in values {
+    if index > 0 {
+      output.write_char('\n')
+    }
+    output.write_string(value.to_text())
+  }
+  output.to_string()
 }
 
 ///|
@@ -198,6 +282,52 @@ fn expand_command(args : Array[String]) -> CommandResult {
 }
 
 ///|
+fn conflicts_command(args : Array[String]) -> CommandResult {
+  let spans = match command_busy_spans(args) {
+    Ok(values) => values
+    Err(error) => return error
+  }
+  if spans.is_empty() {
+    return command_error("missing required option --busy")
+  }
+  let conflicts = find_conflicts(spans)
+  command_success(
+    "conflicts: " +
+    conflicts.length().to_string() +
+    (if conflicts.is_empty() {
+      ""
+    } else {
+      "\n" + conflicts_to_lines(conflicts)
+    }),
+  )
+}
+
+///|
+fn free_command(args : Array[String]) -> CommandResult {
+  let from = match parse_command_date(args, "--from") {
+    Ok(value) => value
+    Err(error) => return error
+  }
+  let through = match parse_command_date(args, "--through") {
+    Ok(value) => value
+    Err(error) => return error
+  }
+  let spans = match command_busy_spans(args) {
+    Ok(values) => values
+    Err(error) => return error
+  }
+  match find_free(from, through, spans) {
+    Ok(values) =>
+      command_success(
+        "free: " +
+        values.length().to_string() +
+        (if values.is_empty() { "" } else { "\n" + free_to_lines(values) }),
+      )
+    Err(error) => command_error(error.to_text())
+  }
+}
+
+///|
 /// Execute a portable CLI command without performing process I/O.
 pub fn execute(args : Array[String]) -> CommandResult {
   if args.is_empty() ||
@@ -210,6 +340,8 @@ pub fn execute(args : Array[String]) -> CommandResult {
     "validate" => validate_command(args)
     "explain" => explain_command(args)
     "expand" => expand_command(args)
+    "conflicts" => conflicts_command(args)
+    "free" => free_command(args)
     command => command_error("unknown command: " + command + "\n\n" + help_text)
   }
 }

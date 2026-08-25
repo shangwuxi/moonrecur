@@ -27,6 +27,7 @@ CLI, JSON, documentation, and CI practices are engineering infrastructure only.
 - Bounded expansion with deterministic ordering and duplicate removal.
 - Stable parse and validation diagnostics.
 - Human-readable CLI output and stable process exit codes.
+- CLI conflict detection and free-window discovery for inclusive all-day busy spans.
 
 ## Partial behavior
 
@@ -50,6 +51,7 @@ CLI, JSON, documentation, and CI practices are engineering infrastructure only.
 5. Reject invalid dates, unknown rule parts, conflicting bounds, and expansion
    requests without a finite result limit.
 6. Run the same tests under wasm-gc, wasm, JavaScript, and native checks.
+7. Detect overlapping busy spans and derive free ranges through the portable CLI.
 
 ## Selected fingerprint
 
@@ -63,8 +65,8 @@ CLI, JSON, documentation, and CI practices are engineering infrastructure only.
   inclusion dates, exclusion dates, and occurrence sets.
 - **Central techniques:** Gregorian arithmetic, canonical rule parsing, bounded
   recurrence generation, selector filtering, and set normalization.
-- **Outputs:** canonical rules, occurrence sequences, stable diagnostics, and CLI
-  human/JSON representations.
+- **Outputs:** canonical rules, occurrence sequences, conflict/free-range reports,
+  stable diagnostics, and human-readable CLI representations.
 - **Acceptance demonstration:** expand monthly recurrence across leap-day and
   month-end boundaries, apply additions/exclusions, and reject invalid or unbounded
   requests.

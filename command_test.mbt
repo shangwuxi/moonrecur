@@ -88,3 +88,67 @@ test "CLI reports input diagnostics and usage errors" {
   assert_eq(unknown.exit_code, 2)
   assert_true(unknown.output.contains("unknown command: launch"))
 }
+
+///|
+test "CLI reports all schedule conflicts" {
+  let result = @moonrecur.execute([
+    "conflicts", "--busy", "release:2026-08-10..2026-08-12", "--busy", "review:2026-08-12..2026-08-13",
+    "--busy", "travel:2026-08-20..2026-08-21",
+  ])
+  assert_eq(result.exit_code, 0)
+  assert_eq(
+    result.output,
+    "conflicts: 1\nrelease <> review:2026-08-12..2026-08-12",
+  )
+}
+
+///|
+test "CLI finds free ranges after clipping busy spans" {
+  let result = @moonrecur.execute([
+    "free", "--from", "2026-08-01", "--through", "2026-08-10", "--busy", "before:2026-07-20..2026-08-02",
+    "--busy", "middle:2026-08-05..2026-08-06", "--busy", "after:2026-08-10..2026-08-20",
+  ])
+  assert_eq(result.exit_code, 0)
+  assert_eq(
+    result.output,
+    "free: 2\n2026-08-03..2026-08-04\n2026-08-07..2026-08-09",
+  )
+}
+
+///|
+test "CLI accepts an empty busy set for a free query" {
+  let result = @moonrecur.execute([
+    "free", "--from", "2026-08-01", "--through", "2026-08-03",
+  ])
+  assert_eq(result.exit_code, 0)
+  assert_eq(result.output, "free: 1\n2026-08-01..2026-08-03")
+}
+
+///|
+test "CLI rejects malformed busy spans" {
+  let malformed = @moonrecur.execute([
+    "conflicts", "--busy", "release=2026-08-10..2026-08-12",
+  ])
+  assert_eq(malformed.exit_code, 2)
+  assert_true(malformed.output.contains("expected LABEL:START..END"))
+  let bad_date = @moonrecur.execute([
+    "conflicts", "--busy", "release:2026-02-29..2026-03-01",
+  ])
+  assert_eq(bad_date.exit_code, 2)
+  assert_true(bad_date.output.contains("date.day.range"))
+  let reversed = @moonrecur.execute([
+    "conflicts", "--busy", "release:2026-08-12..2026-08-10",
+  ])
+  assert_eq(reversed.exit_code, 2)
+  assert_true(reversed.output.contains("schedule.span.order"))
+}
+
+///|
+test "CLI requires at least one span for conflict analysis" {
+  let result = @moonrecur.execute(["conflicts"])
+  assert_eq(result.exit_code, 2)
+  assert_eq(result.output, "missing required option --busy")
+  let missing_value = @moonrecur.execute(["conflicts", "--busy"])
+  assert_eq(missing_value.exit_code, 2)
+  assert_eq(missing_value.output, "missing value for option --busy")
+}
