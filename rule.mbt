@@ -70,7 +70,16 @@ fn parse_integer(value : String, field : String) -> Result[Int, Diagnostic] {
       sign = -1
     } else if char >= '0' && char <= '9' {
       seen_digit = true
-      number = number * 10 + char.to_int() - '0'.to_int()
+      let digit = char.to_int() - '0'.to_int()
+      if number > (2147483647 - digit) / 10 {
+        return Err(
+          Diagnostic::new(
+            "rule.integer.overflow", field, "integer exceeds the supported magnitude",
+            "at most 2147483647", value,
+          ),
+        )
+      }
+      number = number * 10 + digit
     } else {
       return Err(
         Diagnostic::new(
@@ -203,6 +212,17 @@ fn duplicate_field(field : String) -> Diagnostic {
 ///|
 /// Parse a semicolon-separated RFC 5545 recurrence-property value.
 pub fn Rule::parse(source : String) -> Result[Rule, Diagnostic] {
+  if source.length() > 8192 {
+    return Err(
+      Diagnostic::new(
+        "rule.source.too_large",
+        "RRULE",
+        "rule source exceeds the parsing budget",
+        "at most 8192 UTF-16 units",
+        source.length().to_string(),
+      ),
+    )
+  }
   if source.is_empty() {
     return Err(
       Diagnostic::new(

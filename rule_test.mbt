@@ -116,3 +116,29 @@ test "reject unsupported DAILY weekday filter and bad weekday token" {
     "weekday.invalid",
   )
 }
+
+///|
+test "integer wraparound cannot turn huge rule fields into valid small values" {
+  for
+    source in [
+      "FREQ=DAILY;INTERVAL=4294967297", "FREQ=DAILY;COUNT=4294967297", "FREQ=MONTHLY;BYMONTHDAY=-4294967297",
+      "FREQ=YEARLY;BYMONTH=4294967297", "FREQ=DAILY;COUNT=999999999999999999999999",
+    ] {
+    guard @moonrecur.Rule::parse(source) is Err(error) else {
+      fail("overflow accepted")
+    }
+    assert_eq(error.code(), "rule.integer.overflow")
+  }
+}
+
+///|
+test "rule source has an explicit parsing budget" {
+  let source = StringBuilder()
+  for _ in 0..<8200 {
+    source.write_char('0')
+  }
+  guard @moonrecur.Rule::parse(source.to_string()) is Err(error) else {
+    fail("unbounded source accepted")
+  }
+  assert_eq(error.code(), "rule.source.too_large")
+}
