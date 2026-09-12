@@ -1,0 +1,218 @@
+{
+  "baseline_reference": "aa2f5a3405483d35d413aa4aa2f96a519c4919ed",
+  "target": "js",
+  "cases": [
+    {
+      "id": "yearly-explicit-month",
+      "stdout_match": "exact",
+      "argv": [
+        "expand",
+        "--start",
+        "2024-01-15",
+        "--rule",
+        "FREQ=YEARLY;BYMONTH=2,6;COUNT=2",
+        "--from",
+        "2024-01-15",
+        "--through",
+        "2024-12-31"
+      ],
+      "expected_exit_code": 0,
+      "expected_stdout": "occurrences: 2\n2024-02-15\n2024-06-15",
+      "current": {
+        "exit_code": 0,
+        "stdout": "occurrences: 2\n2024-02-15\n2024-06-15",
+        "matches_expected": true
+      },
+      "baseline": {
+        "exit_code": 0,
+        "stdout": "occurrences: 0",
+        "matches_expected": false
+      }
+    },
+    {
+      "id": "yearly-weekday-across-months",
+      "stdout_match": "exact",
+      "argv": [
+        "expand",
+        "--start",
+        "2024-01-30",
+        "--rule",
+        "FREQ=YEARLY;BYDAY=MO;COUNT=2",
+        "--from",
+        "2024-01-30",
+        "--through",
+        "2024-03-01"
+      ],
+      "expected_exit_code": 0,
+      "expected_stdout": "occurrences: 2\n2024-02-05\n2024-02-12",
+      "current": {
+        "exit_code": 0,
+        "stdout": "occurrences: 2\n2024-02-05\n2024-02-12",
+        "matches_expected": true
+      },
+      "baseline": {
+        "exit_code": 0,
+        "stdout": "occurrences: 0",
+        "matches_expected": false
+      }
+    },
+    {
+      "id": "yearly-monthday-across-months",
+      "stdout_match": "exact",
+      "argv": [
+        "expand",
+        "--start",
+        "2024-01-15",
+        "--rule",
+        "FREQ=YEARLY;BYMONTHDAY=1;COUNT=2",
+        "--from",
+        "2024-01-15",
+        "--through",
+        "2024-03-01"
+      ],
+      "expected_exit_code": 0,
+      "expected_stdout": "occurrences: 2\n2024-02-01\n2024-03-01",
+      "current": {
+        "exit_code": 0,
+        "stdout": "occurrences: 2\n2024-02-01\n2024-03-01",
+        "matches_expected": true
+      },
+      "baseline": {
+        "exit_code": 0,
+        "stdout": "occurrences: 0",
+        "matches_expected": false
+      }
+    },
+    {
+      "id": "exclude-before-limit",
+      "stdout_match": "exact",
+      "argv": [
+        "expand",
+        "--start",
+        "2026-01-01",
+        "--rule",
+        "FREQ=DAILY;COUNT=5",
+        "--from",
+        "2026-01-01",
+        "--through",
+        "2026-01-10",
+        "--limit",
+        "2",
+        "--exdate",
+        "2026-01-01",
+        "--exdate",
+        "2026-01-02"
+      ],
+      "expected_exit_code": 0,
+      "expected_stdout": "occurrences: 2\n2026-01-03\n2026-01-04",
+      "current": {
+        "exit_code": 0,
+        "stdout": "occurrences: 2\n2026-01-03\n2026-01-04",
+        "matches_expected": true
+      },
+      "baseline": {
+        "exit_code": 0,
+        "stdout": "occurrences: 0",
+        "matches_expected": false
+      }
+    },
+    {
+      "id": "rule-integer-wraparound",
+      "stdout_match": "exact",
+      "argv": [
+        "validate",
+        "--rule",
+        "FREQ=DAILY;COUNT=4294967297"
+      ],
+      "expected_exit_code": 2,
+      "expected_stdout": "rule.integer.overflow at COUNT: integer exceeds the supported magnitude (expected at most 2147483647, got 4294967297)",
+      "current": {
+        "exit_code": 2,
+        "stdout": "rule.integer.overflow at COUNT: integer exceeds the supported magnitude (expected at most 2147483647, got 4294967297)",
+        "matches_expected": true
+      },
+      "baseline": {
+        "exit_code": 0,
+        "stdout": "valid: FREQ=DAILY;COUNT=1",
+        "matches_expected": false
+      }
+    },
+    {
+      "id": "unknown-command-prefix",
+      "stdout_match": "diagnostic-with-help",
+      "argv": [
+        "nonsense",
+        "validate",
+        "--rule",
+        "FREQ=DAILY"
+      ],
+      "expected_exit_code": 2,
+      "expected_stdout": "unknown command: nonsense",
+      "current": {
+        "exit_code": 2,
+        "stdout": "unknown command: nonsense\n\nMoonRecur 0.2.1\nDeterministic civil-calendar recurrence expansion for MoonBit.\n\nUSAGE:\n  moonrecur validate --rule RRULE\n  moonrecur explain  --rule RRULE\n  moonrecur expand   --start DATE --rule RRULE --from DATE --through DATE [--limit N]\n                    [--rdate DATE ...] [--exdate DATE ...]\n  moonrecur conflicts --busy LABEL:START..END [--busy LABEL:START..END ...]\n  moonrecur free      --from DATE --through DATE [--busy LABEL:START..END ...]\n\nDATES: YYYY-MM-DD\nBUSY SPANS: LABEL:START..END (inclusive)\nEXIT CODES: 0 success, 2 usage or validation error",
+        "matches_expected": true
+      },
+      "baseline": {
+        "exit_code": 0,
+        "stdout": "valid: FREQ=DAILY",
+        "matches_expected": false
+      }
+    },
+    {
+      "id": "cli-limit-wraparound",
+      "stdout_match": "exact",
+      "argv": [
+        "expand",
+        "--start",
+        "2026-01-01",
+        "--rule",
+        "FREQ=DAILY",
+        "--from",
+        "2026-01-01",
+        "--through",
+        "2026-01-10",
+        "--limit",
+        "4294967297"
+      ],
+      "expected_exit_code": 2,
+      "expected_stdout": "--limit exceeds integer range",
+      "current": {
+        "exit_code": 2,
+        "stdout": "--limit exceeds integer range",
+        "matches_expected": true
+      },
+      "baseline": {
+        "exit_code": 0,
+        "stdout": "occurrences: 1\n2026-01-01",
+        "matches_expected": false
+      }
+    },
+    {
+      "id": "duplicate-singleton-option",
+      "stdout_match": "exact",
+      "argv": [
+        "validate",
+        "--rule",
+        "FREQ=DAILY",
+        "--rule",
+        "FREQ=WEEKLY"
+      ],
+      "expected_exit_code": 2,
+      "expected_stdout": "duplicate option: --rule",
+      "current": {
+        "exit_code": 2,
+        "stdout": "duplicate option: --rule",
+        "matches_expected": true
+      },
+      "baseline": {
+        "exit_code": 0,
+        "stdout": "valid: FREQ=DAILY",
+        "matches_expected": false
+      }
+    }
+  ],
+  "current_passed": 8,
+  "total": 8,
+  "baseline_passed": 0
+}

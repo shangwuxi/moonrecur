@@ -43,7 +43,11 @@ jobs:
         run: python scripts/compare_dateutil.py --target ${{ matrix.target }} --report quality-report.json
       - name: Real CLI acceptance
         run: python scripts/check_cli.py --target ${{ matrix.target }}
+      - name: Minimal maintenance regression witnesses
+        run: python scripts/audit_regressions.py --target ${{ matrix.target }} --report cli-witnesses.json
       - uses: actions/upload-artifact@v4
         with:
           name: dateutil-${{ matrix.target }}
-          path: quality-report.json
+          path: |
+            quality-report.json
+            cli-witnesses.json
