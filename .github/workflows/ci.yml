@@ -9,59 +9,41 @@ permissions:
   contents: read
 
 jobs:
-  portable:
-    name: Portable checks
+  verify:
+    name: Verify (${{ matrix.target }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [wasm-gc, wasm, js, native]
     steps:
       - uses: actions/checkout@v5
       - name: Install MoonBit
         uses: moonbit-community/setup-moonbit@04293a8a813bfd4b6c2fce22701b52ae1050d100
         with:
           version: latest
-      - name: Resolve dependencies
-        run: moon update
-      - name: Format and strict checks
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Resolve dependencies and record toolchain
+        run: |
+          moon version --all
+          moon update
+          python -m pip install -r scripts/requirements-test.txt
+      - name: Format, API, strict check and build
         run: |
           moon fmt --check
-          moon check --target wasm-gc --deny-warn
-          moon check --target wasm --deny-warn
-          moon check --target js --deny-warn
-      - name: WasmGC tests
-        run: moon test --target wasm-gc
-      - name: Exercise JavaScript CLI
-        run: |
-          moon run cmd/moonrecur --target js -- validate --rule 'FREQ=WEEKLY;COUNT=4;BYDAY=WE,MO' | tee weekly.txt
-          diff -u examples/weekly.expected.txt weekly.txt
-          moon run cmd/moonrecur --target js -- expand --start 2024-01-31 --rule 'FREQ=MONTHLY;COUNT=3' --from 2024-01-01 --through 2024-06-30 | tee month-end.txt
-          diff -u examples/month-end.expected.txt month-end.txt
-          moon run cmd/moonrecur --target js -- conflicts --busy 'release:2026-08-10..2026-08-12' --busy 'review:2026-08-12..2026-08-13' --busy 'travel:2026-08-20..2026-08-21' | tee conflicts.txt
-          diff -u examples/conflicts.expected.txt conflicts.txt
-          moon run cmd/moonrecur --target js -- free --from 2026-08-01 --through 2026-08-10 --busy 'before:2026-07-20..2026-08-02' --busy 'middle:2026-08-05..2026-08-06' --busy 'after:2026-08-10..2026-08-20' | tee free.txt
-          diff -u examples/free.expected.txt free.txt
-          set +e
-          moon run cmd/moonrecur --target js -- validate --rule 'FREQ=MONTHLY;BYMONTH=13' > invalid.txt
-          status=$?
-          set -e
-          test "$status" = "2"
-          diff -u examples/invalid-month.expected.txt invalid.txt
-
-  native:
-    name: Native checks and CLI
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Install MoonBit
-        uses: moonbit-community/setup-moonbit@04293a8a813bfd4b6c2fce22701b52ae1050d100
+          moon info
+          git diff --exit-code -- '*.mbti'
+          moon check --target ${{ matrix.target }} --deny-warn
+          moon build --target ${{ matrix.target }} --deny-warn
+      - name: Unit and invariant tests
+        run: moon test --target ${{ matrix.target }} --deny-warn
+      - name: Independent dateutil comparison
+        run: python scripts/compare_dateutil.py --target ${{ matrix.target }} --report quality-report.json
+      - name: Real CLI acceptance
+        run: python scripts/check_cli.py --target ${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
         with:
-          version: latest
-      - name: Resolve dependencies
-        run: moon update
-      - name: Native verification
-        run: |
-          moon check --target native --deny-warn
-          moon test --target native
-          moon build cmd/moonrecur --target native --release
-          moon run cmd/moonrecur --target native -- validate --rule 'FREQ=WEEKLY;COUNT=4;BYDAY=WE,MO'
-          moon run cmd/moonrecur --target native -- expand --start 2024-01-31 --rule 'FREQ=MONTHLY;COUNT=3' --from 2024-01-01 --through 2024-06-30
-          moon run cmd/moonrecur --target native -- conflicts --busy 'release:2026-08-10..2026-08-12' --busy 'review:2026-08-12..2026-08-13'
-          moon run cmd/moonrecur --target native -- free --from 2026-08-01 --through 2026-08-10 --busy 'middle:2026-08-05..2026-08-06'
+          name: dateutil-${{ matrix.target }}
+          path: quality-report.json

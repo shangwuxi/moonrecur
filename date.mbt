@@ -73,7 +73,7 @@ pub fn Date::make(
       ),
     )
   }
-  Ok({ year, month, day })
+  Ok({ year, month, day, })
 }
 
 ///|
@@ -213,7 +213,7 @@ fn date_from_epoch_day(value : Int64) -> Date {
   let day = day_of_year - (153L * month_prime + 2L) / 5L + 1L
   let month = month_prime + (if month_prime < 10L { 3L } else { -9L })
   let adjusted_year = year + (if month <= 2L { 1L } else { 0L })
-  { year: adjusted_year.to_int(), month: month.to_int(), day: day.to_int() }
+  { year: adjusted_year.to_int(), month: month.to_int(), day: day.to_int(), }
 }
 
 ///|
@@ -252,7 +252,7 @@ pub fn Date::add_months(self : Date, amount : Int) -> Result[Date, Diagnostic] {
   let year = index / 12
   let month = index % 12 + 1
   let day = self.day.min(days_in_month(year, month))
-  Ok({ year, month, day })
+  Ok({ year, month, day, })
 }
 
 ///|

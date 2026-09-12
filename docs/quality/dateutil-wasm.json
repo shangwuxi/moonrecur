@@ -1,0 +1,13 @@
+{
+  "oracle": "python-dateutil 2.9.0.post0",
+  "target": "wasm",
+  "seed": 5545,
+  "rule_cases": 640,
+  "set_cases": 160,
+  "total_cases": 800,
+  "fixture_sha256": "cdbbefde348b3dd28fca37f8b2c5d7e6c9272f81e4a85f87f22b6c959a236224",
+  "executed": 800,
+  "passed_cases": 800,
+  "failed_cases": 0,
+  "passed": true
+}

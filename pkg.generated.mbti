@@ -131,4 +131,3 @@ pub fn Weekday::short_name(Self) -> String
 // Type aliases
 
 // Traits
-

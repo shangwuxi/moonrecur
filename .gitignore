@@ -7,3 +7,5 @@ _build/
 submission/
 submission.md
 local-audit.md
+oracle_run_*/
+scripts/__pycache__/
