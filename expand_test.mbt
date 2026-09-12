@@ -290,3 +290,58 @@ test "RDATE union is sorted deduplicated and excluded before truncation" {
     "2026-01-03\n2026-01-06\n2026-01-07",
   )
 }
+
+///|
+test "public aggregate inputs are revalidated before arithmetic" {
+  let good = @moonrecur.Rule::parse("FREQ=DAILY").unwrap()
+  let bad : @moonrecur.Rule = { ..good, interval: 0, }
+  assert_true(
+    @moonrecur.expand(
+      date("2026-01-01"),
+      bad,
+      window("2026-01-01", "2026-01-10", 10),
+    )
+    is Err(_),
+  )
+  let invalid_window : @moonrecur.ExpansionWindow = {
+    from: date("2026-01-01"),
+    through: date("2026-01-10"),
+    limit: 0,
+  }
+  assert_true(
+    @moonrecur.expand(date("2026-01-01"), good, invalid_window) is Err(_),
+  )
+  let invalid_date : @moonrecur.Date = { year: 2026, month: 2, day: 30, }
+  assert_true(
+    @moonrecur.expand(
+      invalid_date,
+      good,
+      window("2026-01-01", "2026-12-31", 10),
+    )
+    is Err(_),
+  )
+  assert_true(
+    @moonrecur.expand_set(
+      date("2026-01-01"),
+      good,
+      window("2026-01-01", "2026-12-31", 10),
+      [invalid_date],
+      [],
+    )
+    is Err(_),
+  )
+}
+
+///|
+test "mutated selector arrays cannot bypass rule validation" {
+  let rule = @moonrecur.Rule::parse("FREQ=YEARLY;BYMONTH=1").unwrap()
+  rule.by_month.push(13)
+  assert_true(
+    @moonrecur.expand(
+      date("2026-01-01"),
+      rule,
+      window("2026-01-01", "2026-12-31", 10),
+    )
+    is Err(_),
+  )
+}

@@ -148,6 +148,21 @@ fn expand_filtered(
   window : ExpansionWindow,
   excluded : Map[Date, Bool],
 ) -> Result[Array[Date], Diagnostic] {
+  // Public structs can be constructed directly or retain mutable selector arrays.
+  for value in [start, window.from, window.through] {
+    match Date::make(value.year, value.month, value.day) {
+      Err(error) => return Err(error)
+      Ok(_) => ()
+    }
+  }
+  match ExpansionWindow::make(window.from, window.through, window.limit) {
+    Err(error) => return Err(error)
+    Ok(_) => ()
+  }
+  let rule = match Rule::parse(rule.canonical()) {
+    Err(error) => return Err(error)
+    Ok(value) => value
+  }
   if window.through.is_before(start) {
     return Ok([])
   }
@@ -223,6 +238,25 @@ pub fn expand_set(
   additions : Array[Date],
   exclusions : Array[Date],
 ) -> Result[Array[Date], Diagnostic] {
+  if additions.length() > 100000 || exclusions.length() > 100000 {
+    return Err(
+      Diagnostic::new(
+        "expand.exceptions.too_large",
+        "exceptions",
+        "exception input exceeds the element budget",
+        "at most 100000 per array",
+        additions.length().to_string() + "/" + exclusions.length().to_string(),
+      ),
+    )
+  }
+  for values in [additions, exclusions] {
+    for value in values {
+      match Date::make(value.year, value.month, value.day) {
+        Err(error) => return Err(error)
+        Ok(_) => ()
+      }
+    }
+  }
   let excluded : Map[Date, Bool] = Map([])
   for value in exclusions {
     excluded.set(value, true)
