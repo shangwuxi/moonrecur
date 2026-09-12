@@ -247,3 +247,46 @@ test "yearly BYDAY does not inherit DTSTART month" {
     "2024-01-29\n2024-02-05\n2024-02-12",
   )
 }
+
+///|
+test "exclusions are applied before the result limit without resetting COUNT" {
+  let start = date("2026-01-01")
+  let w = window("2026-01-01", "2026-01-10", 2)
+  let removed = [start, date("2026-01-02")]
+  let values = @moonrecur.expand_set(
+    start,
+    @moonrecur.Rule::parse("FREQ=DAILY;COUNT=5").unwrap(),
+    w,
+    [],
+    removed,
+  ).unwrap()
+  assert_eq(@moonrecur.dates_to_lines(values), "2026-01-03\n2026-01-04")
+  let exhausted = @moonrecur.expand_set(
+    start,
+    @moonrecur.Rule::parse("FREQ=DAILY;COUNT=2").unwrap(),
+    w,
+    [],
+    removed,
+  ).unwrap()
+  assert_true(exhausted.is_empty())
+}
+
+///|
+test "RDATE union is sorted deduplicated and excluded before truncation" {
+  let values = @moonrecur.expand_set(
+    date("2026-01-05"),
+    @moonrecur.Rule::parse("FREQ=DAILY;COUNT=5").unwrap(),
+    window("2026-01-01", "2026-01-31", 3),
+    [
+      date("2026-01-03"),
+      date("2026-01-01"),
+      date("2026-01-03"),
+      date("2026-01-05"),
+    ],
+    [date("2026-01-01"), date("2026-01-05")],
+  ).unwrap()
+  assert_eq(
+    @moonrecur.dates_to_lines(values),
+    "2026-01-03\n2026-01-06\n2026-01-07",
+  )
+}

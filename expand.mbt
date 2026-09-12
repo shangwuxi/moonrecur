@@ -138,6 +138,16 @@ pub fn expand(
   rule : Rule,
   window : ExpansionWindow,
 ) -> Result[Array[Date], Diagnostic] {
+  expand_filtered(start, rule, window, Map([]))
+}
+
+///|
+fn expand_filtered(
+  start : Date,
+  rule : Rule,
+  window : ExpansionWindow,
+  excluded : Map[Date, Bool],
+) -> Result[Array[Date], Diagnostic] {
   if window.through.is_before(start) {
     return Ok([])
   }
@@ -181,7 +191,9 @@ pub fn expand(
         Some(count) => matched <= count
         None => true
       }
-      if before_count_end && !candidate.is_before(window.from) {
+      if before_count_end &&
+        !candidate.is_before(window.from) &&
+        !excluded.contains(candidate) {
         output.push(candidate)
         if output.length() >= window.limit {
           finished = true
@@ -203,22 +215,7 @@ pub fn expand(
 }
 
 ///|
-fn insert_date_sorted(values : Array[Date], value : Date) -> Unit {
-  if values.any(fn(item) { item == value }) {
-    return
-  }
-  values.push(value)
-  let mut index = values.length() - 1
-  while index > 0 && values[index].is_before(values[index - 1]) {
-    let previous = values[index - 1]
-    values[index - 1] = values[index]
-    values[index] = previous
-    index = index - 1
-  }
-}
-
-///|
-/// Expand a rule, add RDATE values, then remove EXDATE values.
+/// Apply exclusions before the result limit; COUNT still counts rule occurrences.
 pub fn expand_set(
   start : Date,
   rule : Rule,
@@ -226,19 +223,28 @@ pub fn expand_set(
   additions : Array[Date],
   exclusions : Array[Date],
 ) -> Result[Array[Date], Diagnostic] {
-  let base = match expand(start, rule, window) {
+  let excluded : Map[Date, Bool] = Map([])
+  for value in exclusions {
+    excluded.set(value, true)
+  }
+  let base = match expand_filtered(start, rule, window, excluded) {
     Ok(values) => values
     Err(error) => return Err(error)
   }
   for value in additions {
-    if !value.is_before(window.from) && !value.is_after(window.through) {
-      insert_date_sorted(base, value)
+    if !value.is_before(window.from) &&
+      !value.is_after(window.through) &&
+      !excluded.contains(value) {
+      base.push(value)
     }
   }
-  let result = []
+  base.sort_by(fn(a, b) { a.compare(b) })
+  let result : Array[Date] = []
   for value in base {
-    if !exclusions.any(fn(item) { item == value }) &&
-      result.length() < window.limit {
+    if result.length() >= window.limit {
+      break
+    }
+    if result.is_empty() || result[result.length() - 1] != value {
       result.push(value)
     }
   }
