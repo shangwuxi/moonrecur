@@ -152,3 +152,20 @@ test "CLI requires at least one span for conflict analysis" {
   assert_eq(missing_value.exit_code, 2)
   assert_eq(missing_value.output, "missing value for option --busy")
 }
+
+///|
+test "CLI rejects typo duplicate incomplete and overflow options" {
+  for
+    args in [
+      ["validate", "--rule", "FREQ=DAILY", "--typo", "x"],
+      ["validate", "--rule", "FREQ=DAILY", "--rule", "FREQ=YEARLY"],
+      ["validate", "--rule"],
+      [
+        "expand", "--start", "2026-01-01", "--rule", "FREQ=DAILY", "--from", "2026-01-01",
+        "--through", "2026-01-10", "--limit", "4294967297",
+      ],
+      ["unknown", "validate", "--rule", "FREQ=DAILY"],
+    ] {
+    assert_eq(@moonrecur.execute(args).exit_code, 2)
+  }
+}

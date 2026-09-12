@@ -1,28 +1,28 @@
 ///|
-fn main {
-  let raw_args = @env.args()
-  let mut command_index = raw_args.length()
-  for index, value in raw_args {
-    if command_index == raw_args.length() &&
-      (
-        value == "validate" ||
-        value == "explain" ||
-        value == "expand" ||
-        value == "conflicts" ||
-        value == "free" ||
-        value == "help" ||
-        value == "--help" ||
-        value == "-h"
-      ) {
-      command_index = index
-    }
-  }
-  let args = if command_index < raw_args.length() {
-    raw_args[command_index:].to_owned()
-  } else {
+#cfg(target="js")
+fn user_args() -> Array[String] {
+  let args = @env.args()
+  if args.length() <= 2 {
     []
+  } else {
+    args[2:].to_owned()
   }
-  let result = @lib.execute(args)
+}
+
+///|
+#cfg(not(target="js"))
+fn user_args() -> Array[String] {
+  let args = @env.args()
+  if args.is_empty() {
+    []
+  } else {
+    args[1:].to_owned()
+  }
+}
+
+///|
+fn main {
+  let result = @lib.execute(user_args())
   if !result.output.is_empty() {
     println(result.output)
   }

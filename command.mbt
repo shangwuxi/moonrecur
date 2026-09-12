@@ -23,12 +23,12 @@ pub let help_text =
 
 ///|
 fn command_success(output : String) -> CommandResult {
-  { exit_code: 0, output }
+  { exit_code: 0, output, }
 }
 
 ///|
 fn command_error(output : String) -> CommandResult {
-  { exit_code: 2, output }
+  { exit_code: 2, output, }
 }
 
 ///|
@@ -158,7 +158,11 @@ fn command_int(value : String, field : String) -> Result[Int, String] {
     if char < '0' || char > '9' {
       return Err(field + " must be an integer")
     }
-    result = result * 10 + char.to_int() - '0'.to_int()
+    let digit = char.to_int() - '0'.to_int()
+    if result > (2147483647 - digit) / 10 {
+      return Err(field + " exceeds integer range")
+    }
+    result = result * 10 + digit
   }
   Ok(result)
 }
@@ -328,6 +332,40 @@ fn free_command(args : Array[String]) -> CommandResult {
 }
 
 ///|
+fn validate_options(args : Array[String]) -> String? {
+  let allowed = match args[0] {
+    "validate" | "explain" => ["--rule"]
+    "expand" =>
+      [
+        "--start", "--rule", "--from", "--through", "--limit", "--rdate", "--exdate",
+      ]
+    "conflicts" => ["--busy"]
+    "free" => ["--from", "--through", "--busy"]
+    _ => return None
+  }
+  let seen : Map[String, Bool] = Map([])
+  let mut index = 1
+  while index < args.length() {
+    let name = args[index]
+    if !allowed.contains(name) {
+      return Some("unknown option: " + name)
+    }
+    if index + 1 >= args.length() || args[index + 1].has_prefix("--") {
+      return Some("missing value for option " + name)
+    }
+    if seen.contains(name) &&
+      name != "--busy" &&
+      name != "--rdate" &&
+      name != "--exdate" {
+      return Some("duplicate option: " + name)
+    }
+    seen.set(name, true)
+    index += 2
+  }
+  None
+}
+
+///|
 /// Execute a portable CLI command without performing process I/O.
 pub fn execute(args : Array[String]) -> CommandResult {
   if args.is_empty() ||
@@ -335,6 +373,10 @@ pub fn execute(args : Array[String]) -> CommandResult {
     args[0] == "--help" ||
     args[0] == "-h" {
     return command_success(help_text)
+  }
+  match validate_options(args) {
+    Some(message) => return command_error(message)
+    None => ()
   }
   match args[0] {
     "validate" => validate_command(args)
