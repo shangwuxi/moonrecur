@@ -119,6 +119,38 @@ fn matches_selectors(rule : Rule, start : Date, candidate : Date) -> Bool {
 }
 
 ///|
+// Visit active periods only. Each returned month/year starts on day 1,
+// so skipping never clamps DTSTART (e.g. January 31 must not become February 29).
+fn next_active_date(candidate : Date, rule : Rule) -> Result[Date, Diagnostic] {
+  match rule.frequency {
+    Daily => candidate.add_days(rule.interval)
+    Weekly =>
+      candidate.add_days(
+        if candidate.weekday() == Sunday {
+          1 + 7 * (rule.interval - 1)
+        } else {
+          1
+        },
+      )
+    Monthly =>
+      if candidate.day == days_in_month(candidate.year, candidate.month) {
+        match candidate.add_days(1) {
+          Err(error) => Err(error)
+          Ok(next) => next.add_months(rule.interval - 1)
+        }
+      } else {
+        candidate.add_days(1)
+      }
+    Yearly =>
+      if candidate.month == 12 && candidate.day == 31 {
+        Date::make(candidate.year + rule.interval, 1, 1)
+      } else {
+        candidate.add_days(1)
+      }
+  }
+}
+
+///|
 fn effective_end(rule : Rule, window : ExpansionWindow) -> Date {
   match rule.until {
     Some(value) =>
@@ -220,7 +252,7 @@ fn expand_filtered(
       }
     }
     if !finished {
-      match candidate.add_days(1) {
+      match next_active_date(candidate, rule) {
         Ok(next) => candidate = next
         Err(_) => finished = true
       }
