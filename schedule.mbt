@@ -47,7 +47,7 @@ pub fn BusySpan::make(
       ),
     )
   }
-  Ok({ label, start, end })
+  Ok({ label, start, end, })
 }
 
 ///|
@@ -118,33 +118,27 @@ pub fn find_conflicts(spans : Array[BusySpan]) -> Array[Conflict] {
 }
 
 ///|
-fn insert_span_by_start(values : Array[BusySpan], value : BusySpan) -> Unit {
-  values.push(value)
-  let mut index = values.length() - 1
-  while index > 0 &&
-        (
-          values[index].start.is_before(values[index - 1].start) ||
-          (
-            values[index].start == values[index - 1].start &&
-            values[index].end.is_before(values[index - 1].end)
-          )
-        ) {
-    let previous = values[index - 1]
-    values[index - 1] = values[index]
-    values[index] = previous
-    index = index - 1
-  }
-}
-
-///|
 /// Sort and merge overlapping or adjacent spans. Labels are joined for traceability.
 pub fn merge_busy(spans : Array[BusySpan]) -> Array[BusySpan] {
-  let sorted = []
-  for value in spans {
-    insert_span_by_start(sorted, value)
+  let sorted : Array[(Int, BusySpan)] = []
+  for index, value in spans {
+    sorted.push((index, value))
   }
+  sorted.sort_by(fn(a, b) {
+    let first = a.1.start.compare(b.1.start)
+    if first != 0 {
+      first
+    } else {
+      let last = a.1.end.compare(b.1.end)
+      if last != 0 {
+        last
+      } else {
+        a.0 - b.0
+      }
+    }
+  })
   let result = []
-  for value in sorted {
+  for (_, value) in sorted {
     if result.is_empty() {
       result.push(value)
     } else {
@@ -207,7 +201,7 @@ pub fn find_free(
   for value in busy {
     if cursor.is_before(value.start) {
       match value.start.add_days(-1) {
-        Ok(end) => result.push({ start: cursor, end })
+        Ok(end) => result.push({ start: cursor, end, })
         Err(_) => ()
       }
     }
@@ -217,7 +211,7 @@ pub fn find_free(
     }
   }
   if !exhausted && !cursor.is_after(window_end) {
-    result.push({ start: cursor, end: window_end })
+    result.push({ start: cursor, end: window_end, })
   }
   Ok(result)
 }
