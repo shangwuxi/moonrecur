@@ -6,7 +6,7 @@ pub(all) struct CommandResult {
 
 ///|
 pub let help_text =
-  #|MoonRecur 0.2.0
+  #|MoonRecur 0.2.1
   #|Deterministic civil-calendar recurrence expansion for MoonBit.
   #|
   #|USAGE:

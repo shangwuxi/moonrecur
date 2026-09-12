@@ -1,82 +1,19 @@
-# MoonRecur scope and acceptance
+# MoonRecur maintenance scope
 
-MoonRecur is an original MoonBit library and CLI for deterministic, bounded
-civil-calendar recurrence expansion. It targets reusable scheduling logic rather
-than wall-clock timers, cron execution, time-zone conversion, or network calendar
-synchronization.
+This work maintains the existing public MoonRecur project, starting from commit
+`aa2f5a3` (0.2.0). It is not a new-project ecosystem-gap submission.
 
-## Non-duplication comparison
+## Maintenance objectives
 
-| Candidate | Domain and core loop | Difference from MoonBench | Difference from MoonContract | Decision |
-| --- | --- | --- | --- | --- |
-| MoonRecur | Parse recurrence rules and expand civil dates | No timing samples, baselines, or regressions | No HTTP, OpenAPI, schemas, or mocks | Selected: portable, reusable, deterministic |
-| MoonLedger | Post double-entry transactions and audit balances | Financial entries rather than timings | Ledgers rather than API interactions | Rejected for this entry: broader policy surface |
-| MoonTransit | Parse GTFS tables and route journeys | Timetables rather than benchmark samples | Transit feeds rather than API contracts | Rejected for this entry: large fixture burden |
+1. Correct yearly selector inheritance and recurrence-set limit ordering.
+2. Harden integer parsing, public aggregate inputs and CLI argument validation.
+3. Reduce unnecessary candidate visits and insertion-sort work without changing API
+   signatures or date-only scope.
+4. Establish an independent pinned oracle, focused regressions, calendar/range
+   invariants and four-target process-level CI.
+5. Document reproducible before/after evidence and remaining limitations.
 
-MoonRecur has a different problem domain, user workflow, core data, algorithms,
-outputs, and acceptance demonstration from every reserved project. Shared testing,
-CLI, JSON, documentation, and CI practices are engineering infrastructure only.
-
-## Supported behavior
-
-- Gregorian civil dates in years 1 through 9999.
-- `DAILY`, `WEEKLY`, `MONTHLY`, and `YEARLY` frequencies.
-- `INTERVAL`, `COUNT`, `UNTIL`, `BYDAY`, `BYMONTHDAY`, and `BYMONTH` rule parts.
-- Positive and negative month-day selectors.
-- Explicit inclusion and exclusion dates.
-- Bounded expansion with deterministic ordering and duplicate removal.
-- Stable parse and validation diagnostics.
-- Human-readable CLI output and stable process exit codes.
-- CLI conflict detection and free-window discovery for inclusive all-day busy spans.
-
-## Partial behavior
-
-- The syntax follows the useful date-only subset of RFC 5545 RRULE, but is not a
-  full iCalendar parser.
-- Weekday selectors are supported without numeric ordinals such as `1MO`.
-- `WKST` is fixed to Monday for weekly interval grouping.
-
-## Unsupported behavior
-
-- Time of day, time zones, daylight-saving transitions, leap seconds, and duration.
-- `BYSETPOS`, `BYYEARDAY`, `BYWEEKNO`, ordinal weekdays, and non-Gregorian calendars.
-- Reading or writing `.ics` containers and scheduling operating-system jobs.
-
-## Acceptance flows
-
-1. Expand a weekly Monday/Wednesday rule within a finite date window.
-2. Expand month-end and leap-day schedules without producing invalid dates.
-3. Apply inclusion and exclusion dates, preserving order and uniqueness.
-4. Normalize an equivalent rule into a stable canonical representation.
-5. Reject invalid dates, unknown rule parts, conflicting bounds, and expansion
-   requests without a finite result limit.
-6. Run the same tests under wasm-gc, wasm, JavaScript, and native checks.
-7. Detect overlapping busy spans and derive free ranges through the portable CLI.
-
-## Selected fingerprint
-
-- **Problem domain:** civil-calendar recurrence and schedule analysis.
-- **Primary users:** MoonBit application authors building calendars, reminders,
-  booking systems, and offline schedulers.
-- **Primary workflow:** parse a start date and recurrence rule, validate and
-  canonicalize it, expand bounded occurrences, apply additions and exclusions,
-  then inspect the result.
-- **Core data:** Gregorian dates, weekdays, recurrence frequencies, BY selectors,
-  inclusion dates, exclusion dates, and occurrence sets.
-- **Central techniques:** Gregorian arithmetic, canonical rule parsing, bounded
-  recurrence generation, selector filtering, and set normalization.
-- **Outputs:** canonical rules, occurrence sequences, conflict/free-range reports,
-  stable diagnostics, and human-readable CLI representations.
-- **Acceptance demonstration:** expand monthly recurrence across leap-day and
-  month-end boundaries, apply additions/exclusions, and reject invalid or unbounded
-  requests.
-- **Explicit non-goals:** timezone databases, CalDAV networking, complete iCalendar
-  documents, benchmark statistics, OpenAPI validation, HTTP mocks, and generic
-  constraint solving.
-
-## Licensing and dependencies
-
-The project uses the OSI-approved Apache-2.0 License. The domain implementation is
-original and uses MoonBit core. The executable imports `moonbitlang/x/sys` 0.4.49
-only to return a portable process exit code; it is Apache-2.0 and documented in
-`THIRD_PARTY.md`. There are no borrowed code or media assets.
+See [QUALITY.md](QUALITY.md) for measurements and [SUPPORTED_RRULE.md](SUPPORTED_RRULE.md)
+for compatibility. This maintenance task does not claim an empty ecosystem or
+submission eligibility under a particular competition track. It does not add time
+zones, cron execution, calendar network services or complete RFC 5545 support.

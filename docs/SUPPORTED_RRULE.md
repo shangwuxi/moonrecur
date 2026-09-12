@@ -26,5 +26,18 @@ not emit an occurrence.
 
 MoonRecur parses an RRULE value, not an iCalendar content line or `.ics` object.
 Floating date-times, UTC values, timezone identifiers, ordinal weekday selectors,
-week numbers, year days, and BYSETPOS expansion are outside version 0.1.0. Unknown or
+week numbers, year days, and BYSETPOS expansion are outside version 0.2.1. Unknown or
 unsupported behavior fails explicitly instead of being silently ignored.
+
+## Maintenance clarifications (0.2.1)
+
+YEARLY with BYMONTH alone inherits the DTSTART day in each selected month. YEARLY
+with BYDAY or BYMONTHDAY but without BYMONTH may expand throughout each active year.
+COUNT is applied before clipping and exceptions; the output limit applies after
+EXDATE and RDATE union. RDATE is not restricted by the rule COUNT or UNTIL.
+
+The parser still accepts BYMONTHDAY with WEEKLY as a date-filter extension even
+though RFC 5545 prohibits that combination. It is not part of the dateutil
+conformance corpus and is not advertised as RFC compliance. DAILY+BYDAY remains
+explicitly unsupported in this version. UNTIL uses YYYY-MM-DD, not basic DATE syntax.
+See QUALITY.md for the exact common subset compared with python-dateutil.

@@ -2,6 +2,25 @@
 
 All notable changes are recorded here. The project follows Semantic Versioning.
 
+## 0.2.1 - 2026-09-12
+
+Maintenance release; the public library interface is unchanged.
+
+- Correct YEARLY selector expansion: explicit BYMONTH inherits only the day;
+  BYDAY/BYMONTHDAY without BYMONTH may expand throughout the year.
+- Apply EXDATE before the output limit without changing RRULE COUNT semantics;
+  sort/de-duplicate RDATE unions without insertion-sort growth.
+- Reject integer wraparound, oversized rule text, invalid public aggregate inputs,
+  oversized exception arrays, ambiguous CLI options, and hidden unknown commands.
+- Skip inactive frequency periods; preserve month-end skipping rather than clamping.
+- Replace busy-span insertion sorting while preserving equal-span label order.
+- Add 800 pinned dateutil comparison cases (baseline: 108 failures; now: zero),
+  a full 400-year calendar cycle and 200 generated occupancy models.
+- Verify 66 test groups, 800 oracle cases and 10 real CLI cases per CI target.
+
+Behavior changes are correctness fixes; callers relying on previously accepted
+malformed options or erroneous annual/exclusion output must update expectations.
+
 ## 0.2.0 - 2026-08-25
 
 - Add `conflicts` CLI analysis for repeated inclusive all-day busy spans.
