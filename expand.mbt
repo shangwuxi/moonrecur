@@ -34,7 +34,7 @@ pub fn ExpansionWindow::make(
       ),
     )
   }
-  Ok({ from, through, limit })
+  Ok({ from, through, limit, })
 }
 
 ///|
@@ -109,13 +109,10 @@ fn matches_selectors(rule : Rule, start : Date, candidate : Date) -> Bool {
       Weekly => if candidate.weekday() != start.weekday() { return false }
       Monthly => if candidate.day != start.day { return false }
       Yearly =>
-        if candidate.month != start.month || candidate.day != start.day {
+        if candidate.day != start.day ||
+          (rule.by_month.is_empty() && candidate.month != start.month) {
           return false
         }
-    }
-  } else if rule.frequency == Yearly && rule.by_month.is_empty() {
-    if candidate.month != start.month {
-      return false
     }
   }
   true

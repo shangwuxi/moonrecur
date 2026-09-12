@@ -205,3 +205,45 @@ test "result limit stops otherwise unbounded rules" {
   ).unwrap()
   assert_eq(@moonrecur.dates_to_lines(values), "2026-01-01\n2026-01-02")
 }
+
+///|
+test "yearly BYMONTH expands selected months with inherited day" {
+  let rule = @moonrecur.Rule::parse("FREQ=YEARLY;BYMONTH=2,6;COUNT=4").unwrap()
+  let values = @moonrecur.expand(
+    date("2024-01-15"),
+    rule,
+    window("2024-01-01", "2025-12-31", 10),
+  ).unwrap()
+  assert_eq(
+    @moonrecur.dates_to_lines(values),
+    "2024-02-15\n2024-06-15\n2025-02-15\n2025-06-15",
+  )
+}
+
+///|
+test "yearly BYMONTHDAY without BYMONTH expands across the year" {
+  let rule = @moonrecur.Rule::parse("FREQ=YEARLY;BYMONTHDAY=-1;COUNT=3").unwrap()
+  let values = @moonrecur.expand(
+    date("2024-01-01"),
+    rule,
+    window("2024-01-01", "2024-12-31", 10),
+  ).unwrap()
+  assert_eq(
+    @moonrecur.dates_to_lines(values),
+    "2024-01-31\n2024-02-29\n2024-03-31",
+  )
+}
+
+///|
+test "yearly BYDAY does not inherit DTSTART month" {
+  let rule = @moonrecur.Rule::parse("FREQ=YEARLY;BYDAY=MO;COUNT=3").unwrap()
+  let values = @moonrecur.expand(
+    date("2024-01-29"),
+    rule,
+    window("2024-01-01", "2024-12-31", 10),
+  ).unwrap()
+  assert_eq(
+    @moonrecur.dates_to_lines(values),
+    "2024-01-29\n2024-02-05\n2024-02-12",
+  )
+}
